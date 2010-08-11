@@ -1,0 +1,101 @@
+This is an EXPERIMENT version. There is a very long road to alpha version.
+
+-1. Why I write this simple framework?
+For fun, for rapid developing on Plack. I borrowed many ideas from Catalyst.
+
+HOW TO USE
+
+0. Project structure:
+
+Example(project name is HelloWorld):
+==================================================================
+HelloWorld
+	--lib
+		--HelloWorld
+			--Controller
+				--Root.pm
+				--Test.pm
+				--Test
+					--Hello.pm
+		--HelloWorld.pm
+	--app.psgi
+==================================================================
+
+1. Write an "App" module, extends HowdyPlack
+
+Example:
+==================================================================
+package HelloWorld;
+
+use Moose;
+use namespace::autoclean;
+
+BEGIN {
+	extends 'HowdyPlack';
+}
+
+__PACKAGE__->setup();
+
+no Moose;
+__PACKAGE__->meta->make_immutable;
+==================================================================
+
+2. Write a "Root" controller as the default controller, extends HowdyPlack::Controller
+
+Example:
+==================================================================
+package HelloWorld::Controller::Root;
+
+use Moose;
+use namespace::autoclean;
+
+BEGIN {
+	extends 'HowdyPlack::Controller';
+}
+
+sub index : Action {                     #handle /
+	my ( $self, $h ) = @_;
+	$h->res->body('Hello World');
+}
+
+sub default : Action {                   
+	my ( $self, $h ) = @_;
+	$h->res->status(404);
+	$h->res->body('404 NOT FOUND');
+}
+
+no Moose;
+__PACKAGE__->meta->make_immutable;
+
+1;
+==================================================================
+
+3. You can write anymore controllers as you like
+
+4. What's the url mapping rule?
+
+ProjectName::Controller::Root::action -> /action
+ProjectName::Controller::A::B::C      -> /a/b/c
+
+Suppose there are two controllers, one is ProjectName::Controller::A::B::C->index(), another is ProjectName::Controller::A::B->c().
+When a request whose path_info is /a/b/c comes to server, the first one handles the request. In the controller tree, the deeper controller is prior to the shallower to handle an ambiguous request.
+
+5. Write a .psgi file
+
+Example:
+==================================================================
+#!/usr/bin/perl -w
+
+use strict;
+
+use HelloWorld;
+
+my $app = sub {
+	my $env = shift;
+	
+	return HelloWorld->new($env)->dispatch;	
+}
+
+==================================================================
+
+The example code above mostly can be generate automatically by helper script.
